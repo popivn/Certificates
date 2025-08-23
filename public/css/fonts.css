@@ -1,0 +1,41 @@
+/* public/css/fonts.css */
+
+/* SVN-Agency FB */
+@font-face {
+    font-family: 'SVN-Agency FB';
+    src: url('../fonts/SVN-Agency FB.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* times_0.ttf (Times New Roman Regular) */
+@font-face {
+    font-family: 'Times New Roman';
+    src: url('../fonts/times_0.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* timesbd_0.ttf (Times New Roman Bold) */
+@font-face {
+    font-family: 'Times New Roman';
+    src: url('../fonts/timesbd_0.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+/* unicode.display.UVNNguyenDu.TTF */
+@font-face {
+    font-family: 'UVN Nguyen Du';
+    src: url('../fonts/unicode.display.UVNNguyenDu.TTF') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* UTM HelvetIns.ttf */
+@font-face {
+    font-family: 'UTM HelvetIns';
+    src: url('../fonts/UTM HelvetIns.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
