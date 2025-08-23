@@ -68,49 +68,7 @@ class RecipientController extends Controller
             'english_date_top' => '0',
         ];
 
-        try {
-            // Lưu HTML để debug
-            $html = view('certificate.pdf-template-pre', ['data' => $data])->render();
-            file_put_contents(storage_path('app/debug_pdf.html'), $html);
-            Log::info('HTML saved for debugging', ['path' => storage_path('app/debug_pdf.html')]);
-
-            $pdf = Pdf::view('certificate.pdf-template-pre', ['data' => $data])
-                ->format('A4')
-                ->landscape(true)
-                ->margins(10, 10, 10, 10)
-                ->showBackground()
-                ->setOption('viewport', ['width' => 842, 'height' => 595])
-                ->browsershot(function ($browsershot) {
-                    $browsershot->setChromePath('C:/Program Files/Google/Chrome/Application/chrome.exe');
-                    $browsershot->waitUntilNetworkIdle();
-                    $browsershot->setOption('protocolTimeout', 120000);
-                    $browsershot->setOption('timeout', 120000);
-                })
-                ->name('certificate-preview.pdf');
-
-            Log::info('PDF generated successfully', ['filename' => 'certificate-preview.pdf']);
-            return $pdf->toResponse();
-        } catch (ProcessFailedException $pe) {
-            Log::error('ProcessFailedException during PDF generation', [
-                'message' => $pe->getMessage(),
-                'command' => method_exists($pe, 'getProcess') ? $pe->getProcess()->getCommandLine() : null,
-                'output' => method_exists($pe, 'getProcess') ? $pe->getProcess()->getOutput() : null,
-                'errorOutput' => method_exists($pe, 'getProcess') ? $pe->getProcess()->getErrorOutput() : null,
-            ]);
-            // Đừng dùng back() ở đây, vì sẽ gây vòng lặp nếu không có referer hợp lệ!
-            return response()->view('errors.pdf-failed', [
-                'error' => 'Lỗi tạo PDF: ' . $pe->getMessage()
-            ], 500);
-        } catch (\Exception $e) {
-            Log::error('Unexpected error during PDF generation', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-            // Đừng dùng back() ở đây, vì sẽ gây vòng lặp nếu không có referer hợp lệ!
-            return response()->view('errors.pdf-failed', [
-                'error' => 'Lỗi tạo PDF: ' . $e->getMessage()
-            ], 500);
-        }
+        return  view('certificate.pdf-template-pre', compact('data'));
     }
 
      public function generatePdf(Request $request)
