@@ -20,6 +20,10 @@
             <i class="fa fa-certificate me-1"></i>
             Create Certificate
         </a>
+        <a href="{{ route('certificate.bulk') }}" class="btn btn-success">
+            <i class="fa fa-certificate me-1"></i>
+            Create Certificate
+        </a>
     </div>
 @endsection
 

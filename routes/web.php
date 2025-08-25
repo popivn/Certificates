@@ -15,6 +15,7 @@ Route::get('/', function () {
 
 Route::prefix('certificate')->name('certificate.')->group(function () {
     Route::get('/', [RecipientController::class, 'create'])->name('create');
+    Route::get('/bulk', [RecipientController::class, 'bulk'])->name('bulk');
     Route::post('/preview', [RecipientController::class, 'preview'])->name('preview');
     Route::post('/preview-pdf', [RecipientController::class, 'previewPdf'])->name('preview.pdf');
     Route::post('/generate-pdf', [RecipientController::class, 'generatePdf'])->name('generate.pdf');
@@ -22,6 +23,7 @@ Route::prefix('certificate')->name('certificate.')->group(function () {
 });
 
 Route::get('/create-certificate', [RecipientController::class, 'create'])->name('create.certificate');
+Route::post('/create-certificate-bulk', [RecipientController::class, 'generateBulkPdf'])->name('certificate.generate.bulk');
 Route::get('/preview-certificate', [RecipientController::class, 'previewPdf'])->name('preview.certificate');
 Route::post('/pdf/add-background', [PdfController::class, 'addBackground'])->name('pdf.add-background');
 Route::get('/pdf/upload', [PdfController::class, 'showUploadForm'])->name('pdf.upload.form');
