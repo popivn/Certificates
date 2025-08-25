@@ -5,7 +5,11 @@ FROM composer:2 AS vendor
 WORKDIR /app
 COPY composer.json composer.lock ./
 # Add troubleshooting: show PHP and Composer version, and list files before install
-RUN php -v && composer --version && ls -l && composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts || (echo "Composer install failed" && cat /app/composer.lock && exit 1)
+RUN set -e; \
+    php -v; \
+    composer --version; \
+    ls -l; \
+    composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
 ##########
 # Stage 2: Runtime image (PHP-FPM)
