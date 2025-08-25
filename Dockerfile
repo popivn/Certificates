@@ -1,22 +1,6 @@
-##########
-# Stage 1: Install PHP dependencies (no-dev) using Composer image
-##########
-FROM composer:2 AS vendor
-WORKDIR /app
-COPY composer.json composer.lock ./
-# Add troubleshooting: show PHP and Composer version, and list files before install
-RUN set -e; \
-    php -v || true; \
-    composer --version || true; \
-    ls -l || true; \
-    composer update  --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts || (echo "Composer install failed" && cat /app/composer.lock && exit 1)
-
-##########
-# Stage 2: Runtime image (PHP-FPM)
-##########
 FROM php:8.2-fpm-bullseye
 
-# Install system packages and PHP extensions required by the app
+# Cài extension Laravel thường cần
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         unzip \
@@ -29,10 +13,6 @@ RUN apt-get update \
         libjpeg62-turbo-dev \
         ca-certificates \
         curl \
-        fonts-dejavu \
-        fonts-noto \
-        fonts-noto-cjk \
-        wkhtmltopdf \
     && rm -rf /var/lib/apt/lists/*
 
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
@@ -40,8 +20,6 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
         gd \
         pdo_mysql \
         mbstring \
-        exif \
-        pcntl \
         bcmath \
         zip \
         intl \
@@ -49,16 +27,11 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
 
 WORKDIR /var/www/html
 
-# Copy application source (context filtered by .dockerignore)
-COPY . /var/www/html
+# Copy toàn bộ source code (bao gồm vendor đã cài ở local)
+COPY . .
 
-# Copy vendor from the Composer stage
-COPY --from=vendor /app/vendor /var/www/html/vendor
-
-# Permissions for Laravel writable dirs
+# Phân quyền cho Laravel
 RUN chown -R www-data:www-data /var/www/html \
-    && mkdir -p storage/framework/{cache,sessions,views} \
-    && mkdir -p bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
 USER www-data
