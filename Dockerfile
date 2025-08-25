@@ -18,16 +18,11 @@ RUN apt-get update && apt-get install -y \
 # Cài đặt Composer
 # Sử dụng 'COPY --from=composer' để lấy file thực thi của Composer
 # từ image chính thức của nó, giúp quá trình cài đặt nhanh chóng.
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Copy các file Composer vào image. Đây là bước quan trọng để tận dụng cache của Docker.
 # Nếu chỉ có các file này thay đổi, Docker sẽ chỉ chạy lại bước 'composer install'
 # thay vì chạy lại toàn bộ từ đầu.
-COPY composer.json composer.lock ./
 
-# Chạy Composer để cài đặt các phụ thuộc.
-# Lệnh này sẽ tải và cài đặt các thư viện cần thiết.
-RUN composer install --no-dev --optimize-autoloader
 
 # Copy toàn bộ source code của bạn vào image
 # Sau khi các phụ thuộc đã được cài đặt, chúng ta mới copy toàn bộ code.
