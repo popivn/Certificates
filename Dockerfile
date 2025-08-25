@@ -6,7 +6,6 @@ RUN apt-get update \
         libicu-dev \
         libxml2-dev \
         unzip \
-        wkhtmltopdf \
     && docker-php-ext-install -j$(nproc) \
         pdo_mysql \
         mbstring \
