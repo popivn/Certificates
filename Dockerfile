@@ -1,47 +1,48 @@
-# Sử dụng image PHP chính thức với phiên bản 8.2 và FPM
-FROM php:8.2-fpm-bullseye
+# Stage 1: Build Composer dependencies
+FROM composer:2 AS vendor
 
-# Thiết lập thư mục làm việc mặc định trong container
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader --no-interaction
+
+# Stage 2: Build Node assets (nếu bạn dùng vite/mix)
+FROM node:20 AS frontend
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+# Stage 3: PHP-FPM + Nginx (production)
+FROM php:8.2-fpm-alpine
+
+# Cài các extension Laravel cần
+RUN apk add --no-cache \
+    bash git curl unzip supervisor nginx icu-dev libpng-dev libjpeg-turbo-dev libzip-dev oniguruma-dev \
+    && docker-php-ext-install intl pdo pdo_mysql gd zip mbstring opcache \
+    && rm -rf /var/cache/apk/*
+
+# Tạo user không chạy bằng root
+RUN addgroup -g 1000 laravel && adduser -G laravel -g laravel -s /bin/sh -D laravel
+
 WORKDIR /var/www/html
 
-# Cài đặt các extension PHP cần thiết cho Laravel và các thư viện khác
-# Lệnh 'apt-get' được sử dụng để cài đặt các gói hệ thống.
-# Lệnh 'docker-php-ext-install' dùng để cài đặt các extension của PHP.
-# Các extension này là bắt buộc để Laravel hoạt động.
-RUN apt-get update && apt-get install -y \
-    libzip-dev \
-    unzip \
-    git \
-    libonig-dev \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath zip
-
-# Cài đặt Composer
-# Sử dụng 'COPY --from=composer' để lấy file thực thi của Composer
-# từ image chính thức của nó, giúp quá trình cài đặt nhanh chóng.
-
-# Copy các file Composer vào image. Đây là bước quan trọng để tận dụng cache của Docker.
-# Nếu chỉ có các file này thay đổi, Docker sẽ chỉ chạy lại bước 'composer install'
-# thay vì chạy lại toàn bộ từ đầu.
-
-
-# Copy toàn bộ source code của bạn vào image
-# Sau khi các phụ thuộc đã được cài đặt, chúng ta mới copy toàn bộ code.
-# Việc này đảm bảo nếu bạn chỉ thay đổi code mà không thay đổi file composer.json/lock,
-# Docker sẽ sử dụng lại cache và không chạy lại 'composer install'.
+# Copy source code
 COPY . .
+# Copy vendor từ stage composer
+COPY --from=vendor /app/vendor ./vendor
+# Copy build assets (vite/mix)
+COPY --from=frontend /app/public/build ./public/build
 
-# Phân quyền cho Laravel
-# Chuyển quyền sở hữu thư mục project cho người dùng 'www-data' (người dùng mặc định của PHP FPM)
-# và cấp quyền ghi cho các thư mục 'storage' và 'bootstrap/cache'.
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 775 storage bootstrap/cache
+# Copy config nginx và supervisor
+COPY ./nginx.conf /etc/nginx/http.d/default.conf
+COPY ./supervisor.conf /etc/supervisord.conf
 
-# Chuyển sang người dùng 'www-data' để chạy các tiến trình PHP
-# Điều này giúp tăng tính bảo mật bằng cách không chạy ứng dụng với quyền root.
-USER www-data
+# Phân quyền
+RUN chown -R laravel:laravel /var/www/html \
+    && chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Mở cổng 9000, cổng mặc định của PHP-FPM
-EXPOSE 9000
+USER laravel
 
-# Lệnh mặc định khi container chạy, khởi động PHP-FPM
-CMD ["php-fpm"]
+EXPOSE 80
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
