@@ -7,6 +7,7 @@ storage/logs
 .env
 .env.*
 docker-compose*.yml
+docker/
 tests
 .idea
 .vscode

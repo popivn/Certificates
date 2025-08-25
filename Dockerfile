@@ -41,7 +41,6 @@ RUN chown -R root:root /var/www/html && chmod -R 755 /var/www/html/storage /var/
 
 # Copy config Nginx & Supervisor (giả sử có sẵn file cấu hình)
 COPY docker/nginx.conf /etc/nginx/nginx.conf
-COPY docker/supervisord.conf /etc/supervisord.conf
 
 EXPOSE 80
 CMD ["supervisord", "-c", "/etc/supervisord.conf"]
