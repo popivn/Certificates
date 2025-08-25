@@ -9,7 +9,7 @@ RUN set -e; \
     php -v || true; \
     composer --version || true; \
     ls -l || true; \
-    composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts || (echo "Composer install failed" && cat /app/composer.lock && exit 1)
+    composer update  --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts || (echo "Composer install failed" && cat /app/composer.lock && exit 1)
 
 ##########
 # Stage 2: Runtime image (PHP-FPM)
