@@ -1,48 +1,37 @@
-# Stage 1: Build Composer dependencies
-FROM composer:2 AS vendor
+FROM php:8.2-fpm-bullseye
 
-WORKDIR /app
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Cài dependency cần thiết (bắt buộc + optional)
+RUN set -eux; \
+    apt-get update; \
+    # Gói bắt buộc
+    apt-get install -y --no-install-recommends \
+        libzip-dev \
+        libicu-dev \
+        libxml2-dev \
+        unzip; \
+    # Gói optional (nếu lỗi thì bỏ qua)
+    (apt-get install -y wkhtmltopdf || echo "Skip wkhtmltopdf"); \
+    rm -rf /var/lib/apt/lists/*
 
-# Stage 2: Build Node assets (nếu bạn dùng vite/mix)
-FROM node:20 AS frontend
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-RUN npm run build
-
-# Stage 3: PHP-FPM + Nginx (production)
-FROM php:8.2-fpm-alpine
-
-# Cài các extension Laravel cần
-RUN apk add --no-cache \
-    bash git curl unzip supervisor nginx icu-dev libpng-dev libjpeg-turbo-dev libzip-dev oniguruma-dev \
-    && docker-php-ext-install intl pdo pdo_mysql gd zip mbstring opcache \
-    && rm -rf /var/cache/apk/*
-
-# Tạo user không chạy bằng root
-RUN addgroup -g 1000 laravel && adduser -G laravel -g laravel -s /bin/sh -D laravel
+# Cài extension PHP cần thiết
+RUN docker-php-ext-install -j"$(nproc)" \
+        pdo_mysql \
+        mbstring \
+        bcmath \
+        zip \
+        intl \
+        opcache
 
 WORKDIR /var/www/html
 
-# Copy source code
+# Copy toàn bộ source vào container
 COPY . .
-# Copy vendor từ stage composer
-COPY --from=vendor /app/vendor ./vendor
-# Copy build assets (vite/mix)
-COPY --from=frontend /app/public/build ./public/build
 
-# Copy config nginx và supervisor
-COPY ./nginx.conf /etc/nginx/http.d/default.conf
-COPY ./supervisor.conf /etc/supervisord.conf
+# Phân quyền cho Laravel
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 775 storage bootstrap/cache
 
-# Phân quyền
-RUN chown -R laravel:laravel /var/www/html \
-    && chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
+USER www-data
 
-USER laravel
-
-EXPOSE 80
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+EXPOSE 9000
+CMD ["php-fpm"]
