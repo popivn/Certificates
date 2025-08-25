@@ -1,0 +1,17 @@
+.git
+.gitignore
+node_modules
+vendor
+storage/framework/cache
+storage/framework/sessions
+storage/framework/views
+storage/logs
+.env
+.env.*
+docker-compose*.yml
+docker/
+tests
+.idea
+.vscode
+package-lock.json
+

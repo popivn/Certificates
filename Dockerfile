@@ -1,31 +1,35 @@
+##########
+# Stage 1: Install PHP dependencies (no-dev) using Composer image
+##########
+FROM composer:2 AS vendor
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
+
+##########
+# Stage 2: Runtime image (PHP-FPM)
+##########
 FROM php:8.2-fpm-bullseye
 
-# Install system dependencies and PHP extensions commonly needed by Laravel
+# Install system packages and PHP extensions required by the app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        git \
         unzip \
         libpng-dev \
-        libonig-dev \
         libzip-dev \
         libicu-dev \
         libxml2-dev \
         zlib1g-dev \
         libfreetype6-dev \
         libjpeg62-turbo-dev \
-        locales \
-        gnupg \
         ca-certificates \
         curl \
         fonts-dejavu \
-        fonts-liberation \
         fonts-noto \
         fonts-noto-cjk \
-        fonts-noto-color-emoji \
         wkhtmltopdf \
     && rm -rf /var/lib/apt/lists/*
 
-# Configure and install PHP extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
         gd \
@@ -38,23 +42,21 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
         intl \
         opcache
 
-# Install Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
 WORKDIR /var/www/html
 
-# Copy application source
+# Copy application source (context filtered by .dockerignore)
 COPY . /var/www/html
 
-# Ensure storage and bootstrap cache are writable
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
-    && find /var/www/html/storage -type d -exec chmod 775 {} \; \
-    && chmod -R 775 /var/www/html/bootstrap/cache
+# Copy vendor from the Composer stage
+COPY --from=vendor /app/vendor /var/www/html/vendor
+
+# Permissions for Laravel writable dirs
+RUN chown -R www-data:www-data /var/www/html \
+    && mkdir -p storage/framework/{cache,sessions,views} \
+    && mkdir -p bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
 
 USER www-data
 
 EXPOSE 9000
-
 CMD ["php-fpm"]
-
-
