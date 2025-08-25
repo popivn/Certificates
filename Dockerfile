@@ -40,7 +40,7 @@ RUN composer install --no-dev --no-autoloader && \
 RUN chown -R root:root /var/www/html && chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Copy config Nginx & Supervisor (giả sử có sẵn file cấu hình)
-COPY docker/nginx.conf /etc/nginx/nginx.conf
+COPY docker\nginx\default.conf /etc/nginx/nginx.conf
 
 EXPOSE 80
 CMD ["supervisord", "-c", "/etc/supervisord.conf"]
