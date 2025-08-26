@@ -21,6 +21,13 @@ if ! grep -q "APP_KEY=base64:" .env; then
     php artisan key:generate
 fi
 
+# Run Laravel commands that were blocked during build
+echo "Running Laravel package discovery..."
+php artisan package:discover --ansi
+
+echo "Running Laravel optimizations..."
+php artisan optimize
+
 # Run migrations
 echo "Running migrations..."
 php artisan migrate --force

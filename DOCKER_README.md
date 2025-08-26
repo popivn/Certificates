@@ -7,6 +7,18 @@ Dự án đã được cấu hình với Docker để chạy:
 - **Nginx** làm web server
 - **MySQL 8.0** làm database
 
+## ✅ Đã fix lỗi Docker build
+
+**Vấn đề trước đây:**
+- Laravel chạy `artisan package:discover` trong quá trình build
+- Không tìm thấy thư mục cache (`storage/framework/*`, `bootstrap/cache`)
+- Composer scripts bị lỗi do thiếu quyền ghi
+
+**Giải pháp đã áp dụng:**
+- Tạo thư mục cache trước khi `composer install`
+- Sử dụng `--no-scripts` để block Laravel commands trong build
+- Chạy Laravel commands sau khi container đã sẵn sàng
+
 ## Cách sử dụng
 
 ### 1. Khởi động ứng dụng
@@ -27,6 +39,8 @@ docker-compose logs -f
 - Chờ database sẵn sàng
 - Tạo file `.env` nếu chưa có
 - Generate `APP_KEY`
+- Chạy `php artisan package:discover` (đã bị block trong build)
+- Chạy `php artisan optimize`
 - Chạy migrations
 - Tạo storage link
 - Cache configuration
@@ -73,6 +87,21 @@ DB_USERNAME=laravel
 DB_PASSWORD=laravel
 ```
 
+**Lưu ý:** Nếu không có `.env.example`, tạo file `.env` với nội dung cơ bản:
+```env
+APP_NAME=Laravel
+APP_ENV=local
+APP_KEY=
+APP_DEBUG=true
+APP_URL=http://localhost:8080
+DB_CONNECTION=mysql
+DB_HOST=db
+DB_PORT=3306
+DB_DATABASE=laravel
+DB_USERNAME=laravel
+DB_PASSWORD=laravel
+```
+
 ### PHP Settings
 File `docker/php/local.ini` chứa cấu hình PHP tùy chỉnh:
 - Upload max: 50MB
@@ -99,8 +128,8 @@ docker-compose exec db mysql -u laravel -p laravel
 docker-compose restart db
 ```
 
-### Lỗi build Docker
-Nếu gặp lỗi build:
+### Lỗi build Docker (đã fix)
+Nếu vẫn gặp lỗi build:
 ```bash
 # Xóa images cũ
 docker-compose down --rmi all
@@ -129,6 +158,20 @@ docker-compose ps
 docker-compose exec app php artisan tinker --execute="DB::connection()->getPdo();"
 ```
 
+### Kiểm tra Laravel commands
+```bash
+# Vào container
+docker-compose exec app bash
+
+# Kiểm tra Laravel
+php artisan --version
+php artisan list
+
+# Chạy lại các commands nếu cần
+php artisan package:discover
+php artisan optimize
+```
+
 ## Production
 
 Để deploy production:
@@ -149,3 +192,15 @@ docker/
 │   └── local.ini        # Cấu hình PHP
 └── init.sh              # Script khởi tạo Laravel
 ```
+
+## Quá trình build và khởi động
+
+1. **Build stage:**
+   - Tạo thư mục cache Laravel
+   - Cài đặt dependencies với `--no-scripts`
+   - Không chạy Laravel commands
+
+2. **Runtime stage:**
+   - Chờ database sẵn sàng
+   - Chạy tất cả Laravel commands cần thiết
+   - Khởi động PHP-FPM
