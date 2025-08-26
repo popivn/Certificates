@@ -331,8 +331,11 @@ class RecipientController extends Controller
      */
     private function generateSinglePagePdf(array $data, string $filePathPdf): void
     {
-        // Generate initial PDF
+        // Generate initial PDF with custom Chromium path
         Pdf::view('certificate.pdf-template-pre', ['data' => $data])
+            ->withBrowsershot(function (\Spatie\Browsershot\Browsershot $browsershot) {
+                $browsershot->setOption('executablePath', '/usr/bin/chromium');
+            })
             ->paperSize(177.7, 126.0)
             ->margins(0, 0, 0, 0)
             ->save($filePathPdf);
