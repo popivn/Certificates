@@ -32,17 +32,26 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copy the existing application directory contents to the working directory
-COPY . /var/www/html
+# Copy composer files first for better caching
+COPY composer.json composer.lock ./
 
-# Install dependencies
-RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+# Install dependencies without running scripts
+RUN composer install --no-dev --no-interaction --prefer-dist --no-scripts --no-autoloader
+
+# Copy the rest of the application
+COPY . .
+
+# Generate autoloader
+RUN composer dump-autoload --optimize
+
+# Make init script executable
+RUN chmod +x docker/init.sh
 
 # Set proper permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
     && chmod -R 755 /var/www/html/bootstrap/cache
 
-# Expose port 9000 and start php-fpm server
+# Expose port 9000 and start initialization script
 EXPOSE 9000
-CMD ["php-fpm"]
+CMD ["docker/init.sh"]
