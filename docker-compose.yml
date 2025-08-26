@@ -1,79 +1,67 @@
-version: "3.9"
+version: '3.8'
 
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    image: certificate-app-php
-    container_name: certificate_app
+    container_name: course-feedback-app
     restart: unless-stopped
     working_dir: /var/www/html
     volumes:
-      - ./:/var/www/html
-      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+      - ./storage:/var/www/html/storage
+      - ./bootstrap/cache:/var/www/html/bootstrap/cache
+    ports:
+      - "8000:80"
+    networks:
+      - course-feedback-network
+    depends_on:
+      - db
     environment:
       - APP_ENV=local
       - APP_DEBUG=true
       - DB_CONNECTION=mysql
       - DB_HOST=db
       - DB_PORT=3306
-      - DB_DATABASE=laravel
-      - DB_USERNAME=laravel
-      - DB_PASSWORD=laravel
-      - PHP_IDE_CONFIG=serverName=certificate-app
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD", "php", "-v"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  web:
-    image: nginx:1.25-alpine
-    container_name: certificate_web
-    restart: unless-stopped
-    ports:
-      - "8080:80"
-    volumes:
-      - ./:/var/www/html:ro
-      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-    depends_on:
-      app:
-        condition: service_healthy
-    networks:
-      - app-network
+      - DB_DATABASE=course_feedback
+      - DB_USERNAME=course_feedback_user
+      - DB_PASSWORD=course_feedback_password
 
   db:
     image: mysql:8.0
-    container_name: certificate_db
+    container_name: course-feedback-db
     restart: unless-stopped
-    ports:
-      - "3307:3306"
     environment:
-      - MYSQL_DATABASE=laravel
-      - MYSQL_USER=laravel
-      - MYSQL_PASSWORD=laravel
-      - MYSQL_ROOT_PASSWORD=root
+      MYSQL_DATABASE: course_feedback
+      MYSQL_USER: course_feedback_user
+      MYSQL_PASSWORD: course_feedback_password
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
     networks:
-      - app-network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "laravel", "-p", "laravel"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - course-feedback-network
 
-networks:
-  app-network:
-    driver: bridge
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: course-feedback-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: course_feedback_user
+      PMA_PASSWORD: course_feedback_password
+    networks:
+      - course-feedback-network
+    depends_on:
+      - db
 
 volumes:
   db_data:
 
-
+networks:
+  course-feedback-network:
+    driver: bridge 

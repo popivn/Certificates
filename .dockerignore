@@ -1,14 +1,49 @@
+# Git
 .git
 .gitignore
-storage/framework/cache
-storage/framework/sessions
-storage/framework/views
-storage/logs
-.env
-.env.*
-docker-compose*.yml
-docker/
-tests
-.idea
-.vscode
 
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Node modules
+node_modules
+npm-debug.log
+
+# Vendor
+vendor
+
+# Storage
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+
+# Environment
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.phpunit.result.cache
+coverage
+
+# Build artifacts
+public/build
+public/hot
+public/storage
+
+# Temporary files
+*.tmp
+*.temp 
