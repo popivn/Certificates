@@ -1,6 +1,6 @@
 FROM php:8.2-fpm
 
-# Install system dependencies
+# Install system dependencies, Node.js, npm, and Chromium for Browsershot
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -13,7 +13,13 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     libjpeg-dev \
     libfreetype6-dev \
+    nodejs \
+    npm \
+    chromium \
     && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
+
+# Install Puppeteer globally (Browsershot dependency)
+RUN npm install -g puppeteer
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
