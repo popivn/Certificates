@@ -1,7 +1,7 @@
 # Use the official PHP image as a base image
 FROM php:8.2-fpm
 
-# Install system dependencies, Node.js, npm, and Chromium for Browsershot
+# Install system dependencies, Node.js, npm
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -16,8 +16,14 @@ RUN apt-get update && apt-get install -y \
     libfreetype6-dev \
     nodejs \
     npm \
-    chromium \
     && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
+
+# Cài Chromium
+RUN apt-get update && apt-get install -y chromium \
+    && rm -rf /var/lib/apt/lists/*
+
+# Link chromium vào chrome (nếu cần)
+RUN ln -s /usr/bin/chromium /usr/bin/google-chrome
 
 # Install Puppeteer globally (Browsershot dependency)
 RUN npm install -g puppeteer
