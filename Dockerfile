@@ -1,3 +1,4 @@
+# Use the official PHP image as a base image
 FROM php:8.2-fpm
 
 # Install system dependencies, Node.js, npm, and Chromium for Browsershot
@@ -21,6 +22,11 @@ RUN apt-get update && apt-get install -y \
 # Install Puppeteer globally (Browsershot dependency)
 RUN npm install -g puppeteer
 
+# Create non-root user for running Puppeteer
+RUN groupadd -r appuser && useradd -r -g appuser -G audio,video appuser \
+    && mkdir -p /home/appuser/Downloads \
+    && chown -R appuser:appuser /home/appuser
+
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
@@ -33,9 +39,19 @@ COPY . /var/www
 # Install Laravel dependencies
 RUN composer install --optimize-autoloader --no-dev
 
-# Laravel permissions
-RUN chown -R www-data:www-data /var/www \
-    && chmod -R 755 /var/www/storage
+# Create Laravel cache directories
+RUN mkdir -p bootstrap/cache \
+    && mkdir -p storage/framework/{cache,sessions,views} \
+    && mkdir -p storage/logs \
+    && mkdir -p storage/app/tmp_bulk_pdfs
+
+# Set proper permissions
+RUN chown -R appuser:appuser /var/www \
+    && chmod -R 755 /var/www/storage \
+    && chmod -R 755 /var/www/bootstrap/cache
+
+# Switch to non-root user
+USER appuser
 
 # Expose port
 EXPOSE 8000
