@@ -1,45 +1,48 @@
-# syntax=docker/dockerfile:1
+# Use the official PHP image as a base image
+FROM php:8.2-fpm
 
-### STAGE 1: Build dependencies using Composer và Node (nếu có)
-FROM composer:latest AS vendor
-WORKDIR /app
-COPY composer.json composer.lock ./
-RUN composer install \
-    --no-dev --no-interaction --prefer-dist --optimize-autoloader
-
-### STAGE 2: Optional – build frontend nếu bạn sử dụng npm/yarn (Ví dụ dùng Node)
-# FROM node:16-alpine AS node-builder
-# WORKDIR /app
-# COPY package.json yarn.lock ./
-# RUN yarn install --production
-# COPY . .
-# RUN yarn build
-
-### STAGE 3: Final production image
-FROM php:8.2-fpm-alpine AS production
-RUN apk add --no-cache nginx supervisor
-
-# Tối ưu PHP
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath
-# Copy composer từ stage vendor
-COPY --from=vendor /usr/bin/composer /usr/bin/composer
-
+# Set working directory
 WORKDIR /var/www/html
-# Copy source và thư viện
-COPY --from=vendor /app /var/www/html
-COPY . .
 
-# Tối ưu Laravel
-RUN composer install --no-dev --no-autoloader && \
-    composer dump-autoload --optimize && \
-    php artisan config:cache && \
-    php artisan route:cache && \
-    php artisan view:cache
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    locales \
+    zip \
+    jpegoptim optipng pngquant gifsicle \
+    vim \
+    unzip \
+    git \
+    curl \
+    libzip-dev \
+    libpq-dev \
+    libonig-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) gd
 
-# Set quyền phù hợp (tốt nhất không dùng www-data làm owner writable toàn bộ)
-RUN chown -R root:root /var/www/html && chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
+# Install PHP extensions
+RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring zip exif pcntl bcmath
 
+# Clear cache
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-EXPOSE 80
-CMD ["supervisord", "-c", "/etc/supervisord.conf"]
+# Copy the existing application directory contents to the working directory
+COPY . /var/www/html
+
+# Install dependencies
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
+# Set proper permissions
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html/storage \
+    && chmod -R 755 /var/www/html/bootstrap/cache
+
+# Expose port 9000 and start php-fpm server
+EXPOSE 9000
+CMD ["php-fpm"]
