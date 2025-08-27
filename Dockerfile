@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y \
     npm \
     && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
 
-# Cài Chromium
+# Cài Chromium (Headless Chrome/Chromium cho chrome-php/chrome & Browsershot)
 RUN apt-get update && apt-get install -y chromium \
     && rm -rf /var/lib/apt/lists/*
 
@@ -28,7 +28,7 @@ RUN ln -s /usr/bin/chromium /usr/bin/google-chrome
 # Install Puppeteer globally (Browsershot dependency)
 RUN npm install -g puppeteer
 
-# Create non-root user for running Puppeteer
+# Create non-root user for running Puppeteer/Chrome
 RUN groupadd -r appuser && useradd -r -g appuser -G audio,video appuser \
     && mkdir -p /home/appuser/Downloads \
     && chown -R appuser:appuser /home/appuser
@@ -42,8 +42,9 @@ WORKDIR /var/www
 # Copy existing application directory contents
 COPY . /var/www
 
-# Install Laravel dependencies
-RUN composer install --optimize-autoloader --no-dev
+# Install Laravel dependencies and required packages for Spatie\LaravelPdf
+RUN composer install --optimize-autoloader --no-dev \
+    && composer require chrome-php/chrome spatie/browsershot --no-scripts --no-interaction
 
 # Create Laravel cache directories
 RUN mkdir -p bootstrap/cache \
