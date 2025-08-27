@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
@@ -158,7 +158,7 @@
             text-transform: uppercase;
             font-family: 'UVN Nguyen Du', Arial, Helvetica, sans-serif;
             position: absolute;
-            top: 158px;
+            top: 154px;
             left: 50%;
             transform: translateX(-50%);
             white-space: nowrap;
@@ -182,7 +182,7 @@
             font-family: 'UVN Nguyen Du', Arial, Helvetica, sans-serif;
             color: #d4af37;
             position: absolute;
-            top: 221px;
+            top: 219px;
             left: 50%;
             transform: translateX(-50%);
             white-space: nowrap;
@@ -196,7 +196,7 @@
             font-weight: 400;
             letter-spacing: 0.1px;
             position: absolute;
-            top: 247px;
+            top: 248px;
             left: 50%;
             transform: translateX(-50%);
             white-space: nowrap;
@@ -283,6 +283,7 @@
     </style>
 </head>
 <body>
+
     <div class="certificate-preview-bg">
         <div id="certificateContent">
             <div class="recipient-name">{{ strtoupper(trim($data['recipient_name'])) }}</div>
@@ -304,7 +305,7 @@
                 <div class="rector-name" style="position: relative; z-index: 2;">{{ trim($data['rector_name']) }}</div>
             </div>
             <div class="decision-number">Quyết định số: {{ $data['decision_number'] }}</div>
-            <div class="decision-number-label">(Decision No.)</div>
+            <div class="decision-number-label">(Decision No: {{ $data['decision_prefix_english'] }})</div>
         </div>
     </div>
 </body>

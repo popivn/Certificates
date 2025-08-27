@@ -29,14 +29,15 @@ class RecipientController extends Controller
             'recipient_name' => 'NGUYỄN VĂN A',
             'award_title' => 'Sinh viên Xuất sắc năm học',
             'academic_year' => '2024 – 2025',
-            'award_title_english' => 'Excellent Student of The Class, Academic Year 2024 – 2025',
+            'award_title_english' => 'Excellent Student of The Class, Gcademic Year 2024 – 2025',
             'program' => 'TÀI CHÍNH - NGÂN HÀNG KHÓA 17/2024',
             'program_english' => 'Finance - Banking K17/2024',
             'issue_day' => 18,
             'issue_month' => 12,
             'issue_year' => 2024,
             'location' => 'Hậu Giang',
-            'decision_prefix' => '', // Để trống để auto sinh .../QĐ-ĐHVTT
+            'decision_prefix' => '245/QĐ-DHVTTU', // Để trống để auto sinh .../QĐ-ĐHVTT
+            'decision_prefix_english' => '245/QD-DHVTTU', // Để trống để auto sinh .../QĐ-ĐHVTT
             'rector_name' => 'Dương Đăng Khoa',
             // Các trường này sẽ được processData tự động sinh ra:
             // 'vietnamese_date', 'decision_number', 'english_date'
@@ -297,6 +298,7 @@ class RecipientController extends Controller
             'issue_year' => null,
             'location' => null,
             'decision_prefix' => null,
+            'decision_prefix_english' => null,            
             'rector_name' => null,
             'position_adjustments' => null,
         ], $data);
@@ -315,7 +317,7 @@ class RecipientController extends Controller
     {
         if ($mssvCol !== null && !empty($row[$mssvCol])) {
             $mssvValue = preg_replace('/[^A-Za-z0-9_\-]/', '_', $row[$mssvCol]);
-            return 'Certificate_' . $mssvValue . '.pdf';
+            return $mssvValue . '.pdf';
         }
         $cleanName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $recipientName);
         return 'Certificate_' . $cleanName . '_' . ($index + 1) . '.pdf';
@@ -333,9 +335,6 @@ class RecipientController extends Controller
     {
         // Generate initial PDF with custom Chromium path
         Pdf::view('certificate.pdf-template-pre', ['data' => $data])
-            ->withBrowsershot(function (\Spatie\Browsershot\Browsershot $browsershot) {
-                $browsershot->setOption('executablePath', '/usr/bin/chromium');
-            })
             ->paperSize(177.7, 126.0)
             ->margins(0, 0, 0, 0)
             ->save($filePathPdf);
@@ -548,6 +547,7 @@ class RecipientController extends Controller
             'issue_year' => 'required|integer|min:2020|max:2030',
             'location' => 'required|string|max:100',
             'decision_prefix' => 'nullable|string|max:50',
+            'decision_prefix_english' => 'nullable|string|max:50',
             'rector_name' => 'required|string|max:100',
         ]);
 
@@ -572,11 +572,8 @@ class RecipientController extends Controller
             $data['issue_day']
         );
 
-        if (empty($data['decision_prefix'])) {
-            $data['decision_number'] = str_pad(rand(100, 999), 3, '0', STR_PAD_LEFT) . '/QĐ-ĐHVTT';
-        } else {
-            $data['decision_number'] = trim($data['decision_prefix']) . '/QĐ-ĐHVTT';
-        }
+        $data['decision_number'] = trim($data['decision_prefix']);
+        $data['decision_prefix_english'] = trim($data['decision_prefix_english']);
 
         $data['vietnamese_date'] = $data['location'] . ', ngày ' . $data['issue_day']
             . ' tháng ' . $data['issue_month']
